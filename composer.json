@@ -1,0 +1,24 @@
+{
+    "name": "opdss/http",
+    "description": "php http request",
+    "type"       : "library",
+    "keywords"   : ["http", "request"],
+    "homepage"   : "http://www.istimer.com/",
+    "license"    : "MIT",
+    "authors"    : [
+        {
+            "name": "opdss",
+            "email": "opdss@qq.com",
+            "homepage": "http://www.istimer.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Opdss\\Http\\": "src/"
+        }
+    },
+    "require": {
+        "php": ">=5.3.0"
+    }
+}
+
