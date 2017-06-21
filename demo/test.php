@@ -17,7 +17,7 @@ spl_autoload_register(function($name)
 });
 
 
-$h = Request::newSession();
+$h = Request::factory();
 
 // 设置单个header
 $h->header('test','666');
@@ -49,9 +49,17 @@ $h->option(CURLOPT_HEADER,true);
 //结果存储文件
 //$h->saveFile(__DIR__.'/tmp.log');
 // POST请求+POST参数
-//$r = $h->post('https://www.baidu.com/s',array('wd'=>'搜索词'));
+//$r = $h->post('https://www.istimer.com/s',array('wd'=>'搜索词'));
 // GET请求+GET参数+失败重试3次
-$r = $h->retry(3)->get('http://www.kuaiyong.com/',array('wd'=>'搜索词'));
+$r = $h->retry(3)->get('http://www.istimer.com/',array('wd'=>'搜索词'));
 //var_dump($r->httpCode());
 //var_dump($r->body,$r->headers,$r->cookies);
-var_dump($r->body);
+//var_dump($r->body);
+$http = Request::factory();
+$response = $http->retry(3) // 失败重试3次
+->ua('Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)')
+    ->referer('http://www.istimer.com/')
+    ->accept('text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8')
+    ->acceptLanguage('zh-CN,zh;q=0.8')
+    ->get('http://www.istimer.com/');
+var_dump($response->cookies);
