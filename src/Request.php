@@ -8,142 +8,149 @@ class Request
 	 * CURL操作对象
 	 * @var resource
 	 */
-	public $handler;
+	private $handler;
 
 	/**
 	 * Url地址
 	 * @var string
 	 */
-	public $url;
+	private $url;
 
 	/**
 	 * 发送内容
 	 * @var mixed
 	 */
-	public $content;
+	private $content;
 
 	/**
 	 * CurlOptions
 	 * @var array
 	 */
-	public $options = array();
+	private $options = array();
 
 	/**
 	 * header头
 	 * @var array
 	 */
-	public $headers = array();
+	private $headers = array();
 
 	/**
 	 * Cookies
 	 * @var array
 	 */
-	public $cookies = array();
+	private $cookies = array();
 
 	/**
 	 * 保存Cookie文件的文件名
 	 * @var string
 	 */
-	public $cookieFileName = '';
+	private $cookieFileName = '';
 
 	/**
 	 * 失败重试次数
 	 * @var int
 	 */
-	public $retry = 0;
+	private $retry = 0;
 
 	/**
 	 * 是否使用代理
 	 * @var bool
 	 */
-	public $useProxy = false;
+	private $useProxy = false;
 
 	/**
 	 * 代理设置
 	 * @var array
 	 */
-	public $proxy = array();
+	private $proxy = array();
 
 	/**
 	 * 是否验证证书
 	 * @var bool
 	 */
-	public $isVerifyCA = false;
+	private $isVerifyCA = false;
 
 	/**
 	 * CA根证书路径
 	 * @var string
 	 */
-	public $caCert;
+	private $caCert;
 
 	/**
 	 * 连接超时时间，单位：毫秒
 	 * @var int
 	 */
-	public $connectTimeout = 30000;
+	private $connectTimeout = 30000;
 
 	/**
 	 * 总超时时间，单位：毫秒
 	 * @var int
 	 */
-	public $timeout = 0;
+	private $timeout = 0;
 
 	/**
 	 * 下载限速，为0则不限制，单位：字节
 	 * @var int
 	 */
-	public $downloadSpeed;
+	private $downloadSpeed;
 
 	/**
 	 * 上传限速，为0则不限制，单位：字节
 	 * @var int
 	 */
-	public $uploadSpeed;
+	private $uploadSpeed;
 
 	/**
 	 * 用于连接中需要的用户名
 	 * @var string
 	 */
-	public $username;
+	private $username;
 
 	/**
 	 * 用于连接中需要的密码
 	 * @var string
 	 */
-	public $password;
+	private $password;
 
 	/**
 	 * 请求结果保存至文件的配置
 	 * @var mixed
 	 */
-	public $saveFileOption = array();
+	private $saveFileOption = array();
 
 	/**
 	 * 代理认证方式
 	 */
-	public static $proxyAuths = array(
-		'basic'		=>	CURLAUTH_BASIC,
-		'ntlm'		=>	CURLAUTH_NTLM
+	private static $proxyAuths = array(
+		'basic' => CURLAUTH_BASIC,
+		'ntlm' => CURLAUTH_NTLM
 	);
 
 	/**
 	 * 代理类型
 	 */
-	public static $proxyType = array(
-		'http'		=>	CURLPROXY_HTTP,
-		'socks4'	=>	CURLPROXY_SOCKS4,
-		'socks4a'	=>	6,	// CURLPROXY_SOCKS4A
-		'socks5'	=>	CURLPROXY_SOCKS5,
+	private static $proxyType = array(
+		'http' => CURLPROXY_HTTP,
+		'socks4' => CURLPROXY_SOCKS4,
+		'socks4a' => 6,    // CURLPROXY_SOCKS4A
+		'socks5' => CURLPROXY_SOCKS5,
 	);
 
 	/**
 	 * __construct
-	 * @return mixed 
+	 * @return mixed
 	 */
 	public function __construct()
 	{
 		$this->open();
-		$this->cookieFileName = tempnam(sys_get_temp_dir(),'');
+		$this->cookieFileName = tempnam(sys_get_temp_dir(), '');
+	}
+
+	public function init()
+	{
+		$this->close();
+		$this->open();
+		return $this;
 	}
 
 	public function __destruct()
@@ -151,7 +158,7 @@ class Request
 		$this->close();
 	}
 
-	public function open()
+	private function open()
 	{
 		$this->handler = curl_init();
 		$this->retry = 0;
@@ -159,8 +166,8 @@ class Request
 		$this->url = $this->content = '';
 		$this->useProxy = false;
 		$this->proxy = array(
-			'auth'	=>	'basic',
-			'type'	=>	'http',
+			'auth' => 'basic',
+			'type' => 'http',
 		);
 		$this->isVerifyCA = false;
 		$this->caCert = null;
@@ -173,10 +180,9 @@ class Request
 		$this->saveFileOption = array();
 	}
 
-	public function close()
+	private function close()
 	{
-		if(null !== $this->handler)
-		{
+		if (null !== $this->handler) {
 			curl_close($this->handler);
 			$this->handler = null;
 		}
@@ -193,7 +199,7 @@ class Request
 
 	/**
 	 * 设置Url
-	 * @param mixed $url 
+	 * @param mixed $url
 	 * @return Request
 	 */
 	public function url($url)
@@ -204,7 +210,7 @@ class Request
 
 	/**
 	 * 设置发送内容，requestBody的别名
-	 * @param mixed $content 
+	 * @param mixed $content
 	 * @return Request
 	 */
 	public function content($content)
@@ -214,7 +220,7 @@ class Request
 
 	/**
 	 * 设置参数，requestBody的别名
-	 * @param mixed $params 
+	 * @param mixed $params
 	 * @return Request
 	 */
 	public function params($params)
@@ -224,7 +230,7 @@ class Request
 
 	/**
 	 * 设置请求主体
-	 * @param mixed $requestBody 
+	 * @param mixed $requestBody
 	 * @return Request
 	 */
 	public function requestBody($requestBody)
@@ -235,13 +241,12 @@ class Request
 
 	/**
 	 * 批量设置CURL的Option
-	 * @param array $options 
+	 * @param array $options
 	 * @return Request
 	 */
 	public function options($options)
 	{
-		foreach($options as $key => $value)
-		{
+		foreach ($options as $key => $value) {
 			$this->options[$key] = $value;
 		}
 		return $this;
@@ -249,8 +254,8 @@ class Request
 
 	/**
 	 * 设置CURL的Option
-	 * @param int $option 
-	 * @param mixed $value 
+	 * @param int $option
+	 * @param mixed $value
 	 * @return Request
 	 */
 	public function option($option, $value)
@@ -261,7 +266,7 @@ class Request
 
 	/**
 	 * 批量设置CURL的Option
-	 * @param array $options 
+	 * @param array $options
 	 * @return Request
 	 */
 	public function headers($headers)
@@ -272,8 +277,8 @@ class Request
 
 	/**
 	 * 设置CURL的Option
-	 * @param int $option 
-	 * @param mixed $value 
+	 * @param int $option
+	 * @param mixed $value
 	 * @return Request
 	 */
 	public function header($header, $value)
@@ -284,7 +289,7 @@ class Request
 
 	/**
 	 * 设置Accept
-	 * @param string $accept 
+	 * @param string $accept
 	 * @return Request
 	 */
 	public function accept($accept)
@@ -306,7 +311,7 @@ class Request
 
 	/**
 	 * 设置Accept-Encoding
-	 * @param string $acceptEncoding 
+	 * @param string $acceptEncoding
 	 * @return Request
 	 */
 	public function acceptEncoding($acceptEncoding)
@@ -317,7 +322,7 @@ class Request
 
 	/**
 	 * 设置Accept-Ranges
-	 * @param string $acceptRanges 
+	 * @param string $acceptRanges
 	 * @return Request
 	 */
 	public function acceptRanges($acceptRanges)
@@ -328,7 +333,7 @@ class Request
 
 	/**
 	 * 设置Cache-Control
-	 * @param string $cacheControl 
+	 * @param string $cacheControl
 	 * @return Request
 	 */
 	public function cacheControl($cacheControl)
@@ -339,7 +344,7 @@ class Request
 
 	/**
 	 * 设置Cookies
-	 * @param array $headers 
+	 * @param array $headers
 	 * @return Request
 	 */
 	public function cookies($headers)
@@ -350,8 +355,8 @@ class Request
 
 	/**
 	 * 设置Cookie
-	 * @param string $name 
-	 * @param string $value 
+	 * @param string $name
+	 * @param string $value
 	 * @return Request
 	 */
 	public function cookie($name, $value)
@@ -362,7 +367,7 @@ class Request
 
 	/**
 	 * 设置Content-Type
-	 * @param string $contentType 
+	 * @param string $contentType
 	 * @return Request
 	 */
 	public function contentType($contentType)
@@ -373,7 +378,7 @@ class Request
 
 	/**
 	 * 设置Range
-	 * @param string $range 
+	 * @param string $range
 	 * @return Request
 	 */
 	public function range($range)
@@ -384,7 +389,7 @@ class Request
 
 	/**
 	 * 设置Referer
-	 * @param string $referer 
+	 * @param string $referer
 	 * @return Request
 	 */
 	public function referer($referer)
@@ -395,7 +400,7 @@ class Request
 
 	/**
 	 * 设置User-Agent
-	 * @param string $userAgent 
+	 * @param string $userAgent
 	 * @return Request
 	 */
 	public function userAgent($userAgent)
@@ -405,42 +410,32 @@ class Request
 	}
 
 	/**
-	 * 设置User-Agent，userAgent的别名
-	 * @param string $userAgent 
-	 * @return Request
-	 */
-	public function ua($userAgent)
-	{
-		return $this->userAgent($userAgent);
-	}
-
-	/**
 	 * 设置失败重试次数，状态码非200时重试
-	 * @param string $userAgent 
+	 * @param string $userAgent
 	 * @return Request
 	 */
 	public function retry($retry)
 	{
-		$this->retry = $retry<0?0:$retry;   //至少请求1次，即重试0次
+		$this->retry = $retry < 0 ? 0 : $retry;   //至少请求1次，即重试0次
 		return $this;
 	}
 
 	/**
 	 * 代理
-	 * @param string $server 
-	 * @param int $port 
-	 * @param string $type 
-	 * @param string $auth 
+	 * @param string $server
+	 * @param int $port
+	 * @param string $type
+	 * @param string $auth
 	 * @return Request
 	 */
 	public function proxy($server, $port, $type = 'http', $auth = 'basic')
 	{
 		$this->useProxy = true;
 		$this->proxy = array(
-			'server'	=>	$server,
-			'port'		=>	$port,
-			'type'		=>	$type,
-			'auth'		=>	$auth,
+			'server' => $server,
+			'port' => $port,
+			'type' => $type,
+			'auth' => $auth,
 		);
 		return $this;
 	}
@@ -453,12 +448,10 @@ class Request
 	 */
 	public function timeout($timeout = null, $connectTimeout = null)
 	{
-		if(null !== $timeout)
-		{
+		if (null !== $timeout) {
 			$this->timeout = $timeout;
 		}
-		if(null !== $connectTimeout)
-		{
+		if (null !== $connectTimeout) {
 			$this->connectTimeout = $connectTimeout;
 		}
 		return $this;
@@ -479,8 +472,8 @@ class Request
 
 	/**
 	 * 设置用于连接中需要的用户名和密码
-	 * @param string $username 
-	 * @param string $password 
+	 * @param string $username
+	 * @param string $password
 	 * @return Request
 	 */
 	public function userPwd($username, $password)
@@ -491,9 +484,21 @@ class Request
 	}
 
 	/**
+	 * 设置证书
+	 * @param $caCert
+	 * @return $this
+	 */
+	public function caCert($caCert)
+	{
+		$this->isVerifyCA = true;
+		$this->caCert = $caCert;
+		return $this;
+	}
+
+	/**
 	 * 保存至文件的设置
-	 * @param string $filePath 
-	 * @param string $fileMode 
+	 * @param string $filePath
+	 * @param string $fileMode
 	 * @return Request
 	 */
 	public function saveFile($filePath, $fileMode = 'w+')
@@ -505,7 +510,7 @@ class Request
 
 	/**
 	 * 获取文件保存路径
-	 * @return string 
+	 * @return string
 	 */
 	public function getSavePath()
 	{
@@ -514,48 +519,43 @@ class Request
 
 	/**
 	 * 发送请求
-	 * @param string $url 
-	 * @param array $requestBody 
+	 * @param string $url
+	 * @param array $requestBody
 	 * @return Response
 	 */
 	public function send($url = null, $requestBody = array(), $method = 'GET')
 	{
-		if(null !== $url)
-		{
+		if (null !== $url) {
 			$this->url = $url;
 		}
-		if(!empty($requestBody))
-		{
-			if(is_array($requestBody))
-			{
+		if (!empty($requestBody)) {
+			if (is_array($requestBody)) {
 				$this->content = http_build_query($requestBody);
-			}
-			else if($requestBody instanceof RequestMultipartBody)
-			{
+			} else if ($requestBody instanceof RequestMultipartBody) {
 				$this->content = $requestBody->content();
 				$this->contentType(sprintf('multipart/form-data; boundary=%s', $requestBody->getBoundary()));
-			}
-			else
-			{
+			} else {
 				$this->content = $requestBody;
 			}
 		}
 		curl_setopt_array($this->handler, array(
 			// 请求地址
-			CURLOPT_URL				=> $url,
+			CURLOPT_URL => $url,
 			// 请求方法
-			CURLOPT_CUSTOMREQUEST	=> $method,
+			CURLOPT_CUSTOMREQUEST => strtoupper($method),
 			// 返回内容
-			CURLOPT_RETURNTRANSFER	=> true,
+			CURLOPT_RETURNTRANSFER => true,
 			// 返回header
-			CURLOPT_HEADER			=> true,
+			CURLOPT_HEADER => true,
 			// 发送内容
-			CURLOPT_POSTFIELDS		=> $this->content,
+			CURLOPT_POSTFIELDS => $this->content,
 			// 保存cookie
-			CURLOPT_COOKIEFILE		=> $this->cookieFileName,
-			CURLOPT_COOKIEJAR		=> $this->cookieFileName,
+			CURLOPT_COOKIEFILE => $this->cookieFileName,
+			CURLOPT_COOKIEJAR => $this->cookieFileName,
 			// 自动重定向
-			CURLOPT_FOLLOWLOCATION	=> true,
+			CURLOPT_FOLLOWLOCATION => true,
+			//输出请求headers
+			CURLINFO_HEADER_OUT => true,
 		));
 		$this->parseCA();
 		$this->parseOptions();
@@ -563,19 +563,21 @@ class Request
 		$this->parseHeaders();
 		$this->parseCookies();
 		$this->parseNetwork();
-		for($i = 0; $i <= $this->retry; ++$i)
-		{
-			$response = new Response($this->handler, curl_exec($this->handler));
+		$retry = 0;
+		do{
+			$retry++;
+			$data = curl_exec($this->handler);
+			$curlInfo = curl_getinfo($this->handler);
+			$response = new Response($data, $curlInfo);
 			$httpCode = $response->httpCode();
 			// 状态码为5XX才需要重试
-			if($httpCode > 0 && ((int)($httpCode/100) != 5))
-			{
+			if ($httpCode > 0 && ((int)($httpCode / 100) != 5)) {
 				break;
 			}
-		}
+		} while ($retry-1 <= $this->retry);
+
 		// 关闭保存至文件的句柄
-		if(isset($this->saveFileOption['fp']))
-		{
+		if (isset($this->saveFileOption['fp'])) {
 			fclose($this->saveFileOption['fp']);
 			$this->saveFileOption['fp'] = null;
 		}
@@ -584,8 +586,8 @@ class Request
 
 	/**
 	 * GET请求
-	 * @param string $url 
-	 * @param array $requestBody 
+	 * @param string $url
+	 * @param array $requestBody
 	 * @return Response
 	 */
 	public function get($url = null, $requestBody = array())
@@ -595,8 +597,8 @@ class Request
 
 	/**
 	 * POST请求
-	 * @param string $url 
-	 * @param array $requestBody 
+	 * @param string $url
+	 * @param array $requestBody
 	 * @return Response
 	 */
 	public function post($url = null, $requestBody = array())
@@ -606,8 +608,8 @@ class Request
 
 	/**
 	 * HEAD请求
-	 * @param string $url 
-	 * @param array $requestBody 
+	 * @param string $url
+	 * @param array $requestBody
 	 * @return Response
 	 */
 	public function head($url = null, $requestBody = array())
@@ -617,8 +619,8 @@ class Request
 
 	/**
 	 * PUT请求
-	 * @param string $url 
-	 * @param array $requestBody 
+	 * @param string $url
+	 * @param array $requestBody
 	 * @return Response
 	 */
 	public function put($url = null, $requestBody = array())
@@ -628,8 +630,8 @@ class Request
 
 	/**
 	 * PATCH请求
-	 * @param string $url 
-	 * @param array $requestBody 
+	 * @param string $url
+	 * @param array $requestBody
 	 * @return Response
 	 */
 	public function patch($url = null, $requestBody = array())
@@ -639,8 +641,8 @@ class Request
 
 	/**
 	 * DELETE请求
-	 * @param string $url 
-	 * @param array $requestBody 
+	 * @param string $url
+	 * @param array $requestBody
 	 * @return Response
 	 */
 	public function delete($url = null, $requestBody = array())
@@ -651,20 +653,18 @@ class Request
 	/**
 	 * 处理Options
 	 */
-	protected function parseOptions()
+	private function parseOptions()
 	{
 		curl_setopt_array($this->handler, $this->options);
 		// 请求结果保存为文件
-		if(isset($this->saveFileOption['filePath']) && null !== $this->saveFileOption['filePath'])
-		{
+		if (isset($this->saveFileOption['filePath']) && null !== $this->saveFileOption['filePath']) {
 			curl_setopt_array($this->handler, array(
 				CURLOPT_HEADER => false,
 				CURLOPT_RETURNTRANSFER => false,
 			));
 			$filePath = $this->saveFileOption['filePath'];
 			$last = substr($filePath, -1, 1);
-			if('/' === $last || '\\' === $last)
-			{
+			if ('/' === $last || '\\' === $last) {
 				// 自动获取文件名
 				$filePath .= basename($this->url);
 			}
@@ -677,15 +677,14 @@ class Request
 	/**
 	 * 处理代理
 	 */
-	protected function parseProxy()
+	private function parseProxy()
 	{
-		if($this->useProxy)
-		{
+		if ($this->useProxy) {
 			curl_setopt_array($this->handler, array(
-				CURLOPT_PROXYAUTH	=> self::$proxyAuths[$this->proxy['auth']],
-				CURLOPT_PROXY		=> $this->proxy['server'],
-				CURLOPT_PROXYPORT	=> $this->proxy['port'],
-				CURLOPT_PROXYTYPE	=> 'socks5' === $this->proxy['type'] ? (defined('CURLPROXY_SOCKS5_HOSTNAME') ? CURLPROXY_SOCKS5_HOSTNAME : self::$proxyType[$this->proxy['type']]) : self::$proxyType[$this->proxy['type']],
+				CURLOPT_PROXYAUTH => self::$proxyAuths[$this->proxy['auth']],
+				CURLOPT_PROXY => $this->proxy['server'],
+				CURLOPT_PROXYPORT => $this->proxy['port'],
+				CURLOPT_PROXYTYPE => 'socks5' === $this->proxy['type'] ? (defined('CURLPROXY_SOCKS5_HOSTNAME') ? CURLPROXY_SOCKS5_HOSTNAME : self::$proxyType[$this->proxy['type']]) : self::$proxyType[$this->proxy['type']],
 			));
 		}
 	}
@@ -693,7 +692,7 @@ class Request
 	/**
 	 * 处理Headers
 	 */
-	protected function parseHeaders()
+	private function parseHeaders()
 	{
 		curl_setopt($this->handler, CURLOPT_HTTPHEADER, $this->parseHeadersFormat());
 	}
@@ -701,11 +700,10 @@ class Request
 	/**
 	 * 处理Cookie
 	 */
-	protected function parseCookies()
+	private function parseCookies()
 	{
 		$content = '';
-		foreach($this->cookies as $name => $value)
-		{
+		foreach ($this->cookies as $name => $value) {
 			$content .= "{$name}={$value}; ";
 		}
 		curl_setopt($this->handler, CURLOPT_COOKIE, $content);
@@ -713,66 +711,59 @@ class Request
 
 	/**
 	 * 处理成CURL可以识别的headers格式
-	 * @return array 
+	 * @return array
 	 */
-	protected function parseHeadersFormat()
+	private function parseHeadersFormat()
 	{
 		$headers = array();
-		foreach($this->headers as $name => $value)
-		{
+		foreach ($this->headers as $name => $value) {
 			$headers[] = $name . ':' . $value;
 		}
 		return $headers;
 	}
-	
+
 	/**
 	 * 处理证书
 	 */
-	protected function parseCA()
+	private function parseCA()
 	{
-		if($this->isVerifyCA)
-		{
+		if ($this->isVerifyCA) {
 			curl_setopt_array($this->handler, array(
-				CURLOPT_SSL_VERIFYPEER	=> true,
-				CURLOPT_CAINFO			=> $this->caCert,
-				CURLOPT_SSL_VERIFYHOST	=> 2,
+				CURLOPT_SSL_VERIFYPEER => true,
+				CURLOPT_CAINFO => $this->caCert,
+				CURLOPT_SSL_VERIFYHOST => 2,
 			));
-		}
-		else
-		{
+		} else {
 			curl_setopt_array($this->handler, array(
-				CURLOPT_SSL_VERIFYPEER	=> false,
-				CURLOPT_SSL_VERIFYHOST	=> 0,
+				CURLOPT_SSL_VERIFYPEER => false,
+				CURLOPT_SSL_VERIFYHOST => 0,
 			));
 		}
 	}
 
 	/**
 	 * 处理网络相关
-	 * @return mixed 
+	 * @return mixed
 	 */
-	protected function parseNetwork()
+	private function parseNetwork()
 	{
 		// 用户名密码处理
-		if('' != $this->username)
-		{
+		if ('' != $this->username) {
 			$userPwd = $this->username . ':' . $this->password;
-		}
-		else
-		{
+		} else {
 			$userPwd = '';
 		}
 		curl_setopt_array($this->handler, array(
 			// 连接超时
-			CURLOPT_CONNECTTIMEOUT_MS		=> $this->connectTimeout,
+			CURLOPT_CONNECTTIMEOUT_MS => $this->connectTimeout,
 			// 总超时
-			CURLOPT_TIMEOUT_MS				=> $this->timeout,
+			CURLOPT_TIMEOUT_MS => $this->timeout,
 			// 下载限速
-			CURLOPT_MAX_RECV_SPEED_LARGE	=> $this->downloadSpeed,
+			CURLOPT_MAX_RECV_SPEED_LARGE => $this->downloadSpeed,
 			// 上传限速
-			CURLOPT_MAX_SEND_SPEED_LARGE	=> $this->uploadSpeed,
+			CURLOPT_MAX_SEND_SPEED_LARGE => $this->uploadSpeed,
 			// 连接中用到的用户名和密码
-			CURLOPT_USERPWD					=> $userPwd,
+			CURLOPT_USERPWD => $userPwd,
 		));
 	}
 }

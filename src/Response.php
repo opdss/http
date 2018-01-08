@@ -5,10 +5,10 @@ namespace Opdss\Http;
 class Response
 {
 	/**
-	 * CURL操作对象
+	 * CURL信息
 	 * @var mixed
 	 */
-	public $handler;
+	private $curlInfo;
 
 	/**
 	 * 请求返回结果
@@ -17,44 +17,47 @@ class Response
 	public $response;
 
 	/**
-	 * 返回头, 最后一次请求的返回头
-	 * @var array
-	 */
-	public $headers = array();
-
-	/**
 	 * 返回头, 包含中间所有请求(即包含重定向)的返回头
 	 * @var array
 	 */
-	public $allHeaders = array();
+	public $allHeaders;
 
 	/**
 	 * Cookie
 	 * @var array
 	 */
-	public $cookies = array();
+	private $cookies;
 
 	/**
 	 * 头部内容
 	 * @var mixed
 	 */
-	public $headerContent = '';
+	public $httpHeader;
 
 	/**
 	 * 返回结果
 	 * @var string
 	 */
-	public $body = '';
+	private $body;
 
 	/**
 	 * __construct
 	 * @return mixed 
 	 */
-	public function __construct($handler, $response)
+	public function __construct($response, $curlInfo)
 	{
-		$this->handler = $handler;
+		$this->curlInfo = $curlInfo;
 		$this->response = $response;
-		$this->parseResponse();
+	}
+
+	/**
+	 * curl详细信息
+	 * @param null $key
+	 * @return null
+	 */
+	public function getCurlInfo($key = null)
+	{
+		return $key ? (isset($this->curlInfo[$key]) ? $this->curlInfo[$key] : null) : $this->curlInfo;
 	}
 
 	/**
@@ -63,7 +66,87 @@ class Response
 	 */
 	public function httpCode()
 	{
-		return curl_getinfo($this->handler, CURLINFO_HTTP_CODE);
+		return $this->getCurlInfo('http_code');
+	}
+
+	/**
+	 * 获取请求头信息
+	 * @return null
+	 */
+	public function requestHeader()
+	{
+		return $this->getCurlInfo('request_header');
+	}
+
+	/**
+	 * 获取响应头信息string
+	 * @return bool|mixed|string
+	 */
+	public function getHttpHeader()
+	{
+		if ($this->httpHeader === null) {
+			$this->httpHeader = substr($this->response, 0, $this->getCurlInfo('header_size'));
+		}
+		return $this->httpHeader;
+	}
+
+	/**
+	 * 获取相应信息
+	 * @return bool|string
+	 */
+	public function getBody()
+	{
+		if ($this->body === null) {
+			$this->body = substr($this->response, $this->getCurlInfo('header_size'));
+		}
+		return $this->body;
+	}
+
+	/**
+	 * 获取cookie
+	 * @param $name
+	 * @return mixed|null
+	 */
+	public function getCookie($name)
+	{
+		$cookies = $this->getCookies();
+		return isset($cookies[$name]) ? $cookies[$name] : null;
+	}
+
+	/**
+	 * 获取cookie
+	 * @return array|null
+	 */
+	public function getCookies()
+	{
+		if ($this->cookies === null) {
+			$this->cookies = $this->parseCookie();
+		}
+		return $this->cookies;
+	}
+
+	/**
+	 * 获取响应头信息
+	 * @param $name
+	 * @return mixed|null
+	 */
+	public function getHeader($name)
+	{
+		$headers = $this->getHeaders();
+		return isset($headers[$name]) ? $headers[$name] : null;
+	}
+
+	/**
+	 * 获取响应头信息
+	 * @param bool $all
+	 * @return array|mixed|null
+	 */
+	public function getHeaders($all = false)
+	{
+		if ($this->allHeaders === null) {
+			$this->allHeaders = $this->parseHeader();
+		}
+		return $all ? $this->allHeaders : end($this->allHeaders);
 	}
 
     /**
@@ -72,34 +155,21 @@ class Response
      */
 	public function __toString()
     {
-        return $this->body ?: '';
+        return $this->getBody();
     }
-
-    /**
-	 * 处理
-	 * @return mixed 
-	 */
-	protected function parseResponse()
-	{
-		// 分离header和body
-		$headerSize = curl_getinfo($this->handler, CURLINFO_HEADER_SIZE);
-		$this->headerContent = substr($this->response, 0, $headerSize);
-		$this->body = substr($this->response, $headerSize);
-		$this->parseHeader();
-		$this->parseCookie();
-	}
 
 	/**
 	 * 处理header
 	 */
-	protected function parseHeader()
+	private function parseHeader()
 	{
-		$rawHeaders = explode("\r\n\r\n", trim($this->headerContent), 2);
+		$allHeaders = array();
+		$rawHeaders = explode("\r\n\r\n", trim($this->getHttpHeader()), 2);
 		$requestCount = count($rawHeaders);
 		for($i=0; $i<$requestCount; ++$i){
-			$this->allHeaders[] = $this->parseHeaderOneRequest($rawHeaders[$i]);
+			$allHeaders[$i] = $this->parseHeaderOneRequest($rawHeaders[$i]);
 		}
-		if($requestCount>0) $this->headers = $this->allHeaders[$requestCount-1];
+		return $allHeaders;
 	}
 
 	/**
@@ -107,14 +177,14 @@ class Response
 	 * @param string $piece 
 	 * @return array
 	 */
-	protected function parseHeaderOneRequest($piece){
+	private function parseHeaderOneRequest($piece){
 		$tmpHeaders = array();
 		$lines = explode("\r\n", $piece);
 		$linesCount = count($lines);
 		//从1开始，第0行包含了协议信息和状态信息，排除该行
 		for($i=1; $i<$linesCount; ++$i){
 			$line = trim($lines[$i]);
-			if(empty($line)) continue;
+			if(empty($line) || strpos($line, ':') === false) continue;
 			list($key, $value) = explode(':', $line, 2);
 			$key = trim($key);
 			$value = trim($value);
@@ -138,9 +208,10 @@ class Response
 	/**
 	 * 处理cookie
 	 */
-	protected function parseCookie()
+	private function parseCookie()
 	{
-		$count = preg_match_all('/set-cookie\s*:\s*([^\r\n]+)/i', $this->headerContent, $matches);
+		$cookies = array();
+		$count = preg_match_all('/set-cookie\s*:\s*([^\r\n]+)/i', $this->getHttpHeader(), $matches);
 		for($i = 0; $i < $count; ++$i)
 		{
 			$list = explode(';', $matches[1][$i]);
@@ -149,13 +220,14 @@ class Response
 			{
 				list($cookieName, $value) = explode('=', $list[0]);
 				$cookieName = trim($cookieName);
-				$this->cookies[$cookieName] = array('value'=>$value);
+				$cookies[$cookieName] = array('value'=>$value);
 				for($j = 1; $j < $count2; ++$j)
 				{
 					list($name, $value) = explode('=', $list[$j]);
-					$this->cookies[$cookieName][trim($name)] = $value;
+					$cookies[$cookieName][trim($name)] = $value;
 				}
 			}
 		}
+		return $cookies;
 	}
 }
