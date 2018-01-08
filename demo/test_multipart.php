@@ -11,4 +11,4 @@ $multipartBody->addFile('file', __DIR__ . '/test_multipart.php', 'test_multipart
 $request = \Opdss\Http\Request::factory();
 $response = $request->post('http://www.istimer.com/multi.php', $multipartBody);
 
-var_dump($response->body);
+var_dump($response->getBody());

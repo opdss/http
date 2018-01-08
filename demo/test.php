@@ -65,16 +65,16 @@ $h->option(CURLOPT_HEADER, true);
 //var_dump($r->body);*/
 $http = Request::factory();
 $response = $http->retry(3)// 失败重试3次
-	->proxy('172.20.15.10', 8888)
+	//->proxy('172.20.15.10', 8888)
 	->userAgent('Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)')
 	->referer('http://www.istimer.com/')
 	->accept('text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8')
 	->acceptLanguage('zh-CN,zh;q=0.8')
 	->header('ttt', '23232')
-	->params((array('ttt', '23232')))
-	->get('http://dm.istimer.com/wechat/score');
+	->params((json_encode(array('sess'=>11))))
+	->post('http://dm.istimer.com/wechat/score');
 //var_dump($http->handler);
-//var_dump($response->getBody());
+var_dump($response->getBody());
 //var_dump($response->getCookies());
-var_dump($response->getHeaders(1));
-//var_dump($response->getCurlInfo());
+var_dump($response->getCurlInfo());
+var_dump($response->getHeaders());

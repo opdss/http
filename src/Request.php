@@ -567,14 +567,13 @@ class Request
 		do{
 			$retry++;
 			$data = curl_exec($this->handler);
-			$curlInfo = curl_getinfo($this->handler);
-			$response = new Response($data, $curlInfo);
+			$response = new Response($data, curl_getinfo($this->handler));
 			$httpCode = $response->httpCode();
 			// 状态码为5XX才需要重试
 			if ($httpCode > 0 && ((int)($httpCode / 100) != 5)) {
 				break;
 			}
-		} while ($retry-1 <= $this->retry);
+		} while ($retry < $this->retry);
 
 		// 关闭保存至文件的句柄
 		if (isset($this->saveFileOption['fp'])) {
