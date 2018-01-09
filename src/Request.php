@@ -137,12 +137,22 @@ class Request
 	);
 
 	/**
+	 * 默认请求方法
+	 * Request constructor.
+	 * @param null $url
+	 */
+	private static $methods = array(
+		'GET', 'POST', 'DELETE', 'PATCH', 'HEAD', 'PUT'
+	);
+
+	/**
 	 * __construct
 	 * @return mixed
 	 */
-	public function __construct()
+	public function __construct($url = null)
 	{
 		$this->open();
+		$url AND $this->url = $url;
 		$this->cookieFileName = tempnam(sys_get_temp_dir(), '');
 	}
 
@@ -192,9 +202,9 @@ class Request
 	 * 创建一个新会话
 	 * @return Request
 	 */
-	public static function factory()
+	public static function factory($url = null)
 	{
-		return new self();
+		return new self($url);
 	}
 
 	/**
@@ -523,7 +533,7 @@ class Request
 	 * @param array $requestBody
 	 * @return Response
 	 */
-	public function send($url = null, $requestBody = array(), $method = 'GET')
+	public function send($method = 'GET', $url = null, $requestBody = array())
 	{
 		if (null !== $url) {
 			$this->url = $url;
@@ -540,7 +550,7 @@ class Request
 		}
 		curl_setopt_array($this->handler, array(
 			// 请求地址
-			CURLOPT_URL => $url,
+			CURLOPT_URL => $this->url,
 			// 请求方法
 			CURLOPT_CUSTOMREQUEST => strtoupper($method),
 			// 返回内容
@@ -566,14 +576,14 @@ class Request
 		$retry = 0;
 		do{
 			$retry++;
-			$data = curl_exec($this->handler);
-			$response = new Response($data, curl_getinfo($this->handler));
+			$content = curl_exec($this->handler);
+			$response = new Response($content, curl_getinfo($this->handler));
 			$httpCode = $response->httpCode();
 			// 状态码为5XX才需要重试
 			if ($httpCode > 0 && ((int)($httpCode / 100) != 5)) {
 				break;
 			}
-		} while ($retry < $this->retry);
+		} while ($retry <= $this->retry); //默认执行一次，重试就重试的次数+1次
 
 		// 关闭保存至文件的句柄
 		if (isset($this->saveFileOption['fp'])) {
@@ -584,69 +594,31 @@ class Request
 	}
 
 	/**
-	 * GET请求
-	 * @param string $url
-	 * @param array $requestBody
+	 * @param $name
+	 * @param $arguments
 	 * @return Response
 	 */
-	public function get($url = null, $requestBody = array())
+	public function __call($name, $arguments)
 	{
-		return $this->send($url, $requestBody, 'GET');
+		$name = strtoupper($name);
+		if (in_array($name, self::$methods)) {
+			return $this->send($name, (isset($arguments[0]) ? $arguments[0] : null), (isset($arguments[1]) ? $arguments[1] : null));
+		}
+		return new Response();
 	}
 
 	/**
-	 * POST请求
-	 * @param string $url
-	 * @param array $requestBody
+	 * @param $name
+	 * @param $arguments
 	 * @return Response
 	 */
-	public function post($url = null, $requestBody = array())
+	public static function __callStatic($name, $arguments)
 	{
-		return $this->send($url, $requestBody, 'POST');
-	}
-
-	/**
-	 * HEAD请求
-	 * @param string $url
-	 * @param array $requestBody
-	 * @return Response
-	 */
-	public function head($url = null, $requestBody = array())
-	{
-		return $this->send($url, $requestBody, 'HEAD');
-	}
-
-	/**
-	 * PUT请求
-	 * @param string $url
-	 * @param array $requestBody
-	 * @return Response
-	 */
-	public function put($url = null, $requestBody = array())
-	{
-		return $this->send($url, $requestBody, 'PUT');
-	}
-
-	/**
-	 * PATCH请求
-	 * @param string $url
-	 * @param array $requestBody
-	 * @return Response
-	 */
-	public function patch($url = null, $requestBody = array())
-	{
-		return $this->send($url, $requestBody, 'PATCH');
-	}
-
-	/**
-	 * DELETE请求
-	 * @param string $url
-	 * @param array $requestBody
-	 * @return Response
-	 */
-	public function delete($url = null, $requestBody = array())
-	{
-		return $this->send($url, $requestBody, 'DELETE');
+		$name = strtoupper($name);
+		if (in_array($name, self::$methods) && isset($arguments[0])) {
+			return self::factory()->send($name, $arguments[0], (isset($arguments[1]) ? $arguments[1] : null));
+		}
+		return new Response();
 	}
 
 	/**

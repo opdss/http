@@ -3,13 +3,13 @@
     "description": "php http request",
     "type"       : "library",
     "keywords"   : ["http", "request"],
-    "homepage"   : "http://www.istimer.com/",
+    "homepage"   : "http://php.istimer.com/",
     "license"    : "MIT",
     "authors"    : [
         {
             "name": "opdss",
             "email": "opdss@qq.com",
-            "homepage": "http://www.istimer.com"
+            "homepage": "http://php.istimer.com"
         }
     ],
     "autoload": {
@@ -18,7 +18,7 @@
         }
     },
     "require": {
-        "php": ">=5.3.0"
+        "php": ">=5.5.0"
     }
 }
 

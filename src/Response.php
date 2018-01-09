@@ -11,16 +11,28 @@ class Response
 	private $curlInfo;
 
 	/**
-	 * 请求返回结果
+	 * 响应数据，包含头
 	 * @var mixed
 	 */
-	public $response;
+	private $content;
+
+	/**
+	 * 响应头
+	 * @var mixed
+	 */
+	private $headerString;
+
+	/**
+	 * 响应实体
+	 * @var string
+	 */
+	private $body;
 
 	/**
 	 * 返回头, 包含中间所有请求(即包含重定向)的返回头
 	 * @var array
 	 */
-	public $allHeaders;
+	private $allHeaders;
 
 	/**
 	 * Cookie
@@ -29,25 +41,22 @@ class Response
 	private $cookies;
 
 	/**
-	 * 头部内容
-	 * @var mixed
-	 */
-	public $httpHeader;
-
-	/**
-	 * 返回结果
-	 * @var string
-	 */
-	private $body;
-
-	/**
 	 * __construct
 	 * @return mixed 
 	 */
-	public function __construct($response, $curlInfo)
+	public function __construct($content = '', $curlInfo = array())
 	{
+		$this->content = $content;
 		$this->curlInfo = $curlInfo;
-		$this->response = $response;
+	}
+
+	/**
+	 * 获取http状态码
+	 * @return int
+	 */
+	public function httpCode()
+	{
+		return $this->getCurlInfo('http_code');
 	}
 
 	/**
@@ -61,33 +70,12 @@ class Response
 	}
 
 	/**
-	 * 获取http状态码
-	 * @return int 
+	 * 获取相应完整信息
+	 * @return mixed
 	 */
-	public function httpCode()
+	public function getContent()
 	{
-		return $this->getCurlInfo('http_code');
-	}
-
-	/**
-	 * 获取请求头信息
-	 * @return null
-	 */
-	public function requestHeader()
-	{
-		return $this->getCurlInfo('request_header');
-	}
-
-	/**
-	 * 获取响应头信息string
-	 * @return bool|mixed|string
-	 */
-	public function getHttpHeader()
-	{
-		if ($this->httpHeader === null) {
-			$this->httpHeader = substr($this->response, 0, $this->getCurlInfo('header_size'));
-		}
-		return $this->httpHeader;
+		return $this->content;
 	}
 
 	/**
@@ -96,10 +84,22 @@ class Response
 	 */
 	public function getBody()
 	{
-		if ($this->body === null) {
-			$this->body = substr($this->response, $this->getCurlInfo('header_size'));
+		if (null === $this->body) {
+			$this->body = substr($this->content, (int)$this->getCurlInfo('header_size'));
 		}
 		return $this->body;
+	}
+
+	/**
+	 * 获取响应头信息string
+	 * @return bool|mixed|string
+	 */
+	public function getHeaderString()
+	{
+		if (null === $this->headerString) {
+			$this->headerString = substr($this->content, 0, (int)$this->getCurlInfo('header_size'));
+		}
+		return $this->headerString;
 	}
 
 	/**
@@ -138,7 +138,7 @@ class Response
 
 	/**
 	 * 获取响应头信息
-	 * @param bool $all
+	 * @param bool $all 是包含中间所有请求(即包含重定向)的返回头，默认返回最后一次响应头
 	 * @return array|mixed|null
 	 */
 	public function getHeaders($all = false)
@@ -150,7 +150,7 @@ class Response
 	}
 
     /**
-     * 直返返回response数据
+     * 直返返回content数据
      * @return string
      */
 	public function __toString()
@@ -164,7 +164,7 @@ class Response
 	private function parseHeader()
 	{
 		$allHeaders = array();
-		$rawHeaders = explode("\r\n\r\n", trim($this->getHttpHeader()), 2);
+		$rawHeaders = explode("\r\n\r\n", trim($this->getHeaderString()), 2);
 		$requestCount = count($rawHeaders);
 		for($i=0; $i<$requestCount; ++$i){
 			$allHeaders[$i] = $this->parseHeaderOneRequest($rawHeaders[$i]);
@@ -211,7 +211,7 @@ class Response
 	private function parseCookie()
 	{
 		$cookies = array();
-		$count = preg_match_all('/set-cookie\s*:\s*([^\r\n]+)/i', $this->getHttpHeader(), $matches);
+		$count = preg_match_all('/set-cookie\s*:\s*([^\r\n]+)/i', $this->getHeaderString(), $matches);
 		for($i = 0; $i < $count; ++$i)
 		{
 			$list = explode(';', $matches[1][$i]);
