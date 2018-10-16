@@ -2,6 +2,15 @@
 
 namespace Opdss\Http;
 
+/**
+ * Class Request
+ * @method get($url, $body = array())
+ * @method post($url, $body = array())
+ * @method put($url, $body = array())
+ * @method delete($url, $body = array())
+ * @method head($url, $body = array())
+ * @package Opdss\Http
+ */
 class Request
 {
 	/**
